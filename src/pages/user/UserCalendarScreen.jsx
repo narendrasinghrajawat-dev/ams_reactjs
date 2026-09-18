@@ -135,14 +135,14 @@ export const UserCalendarScreen = () => {
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
             const isToday = isCurrentMonth && today.getDate() === day;
 
-            const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const dayInfo = calendarData[dayStr];
+            const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const isPast = dayStr < todayDateStr;
+            const isFuture = dayStr > todayDateStr;
 
             const isPresent = dayInfo?.status === 'present' || !!dayInfo?.punch?.punchIn;
-            const isLeave = dayInfo?.status === 'leave';
+            const isLeave = dayInfo?.status === 'leave' || !!dayInfo?.leave;
             const isHoliday = dayInfo?.isHoliday && !isWeekend;
-            const isBeforeJoining = dayInfo?.isBeforeJoining || dayInfo?.status === 'not_joined';
-            const isAbsent = dayInfo?.status === 'absent';
+            const isAbsent = !isPresent && !isLeave && !isHoliday && !isWeekend && isPast;
 
             return (
               <div
@@ -178,9 +178,7 @@ export const UserCalendarScreen = () => {
 
                 {/* Day status badge */}
                 <div>
-                  {isBeforeJoining ? (
-                    <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>--</span>
-                  ) : isPresent ? (
+                  {isPresent ? (
                     <div>
                       <span className="badge badge-success" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>
                         {isToday ? 'Active' : 'Present'}
@@ -192,7 +190,7 @@ export const UserCalendarScreen = () => {
                       )}
                     </div>
                   ) : isLeave ? (
-                    <span className="badge badge-warning" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }} title={dayInfo?.leave?.leaveName}>
+                    <span className="badge badge-warning" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }} title={dayInfo?.leave?.leaveName || 'Leave'}>
                       On Leave
                     </span>
                   ) : isHoliday ? (
@@ -209,7 +207,9 @@ export const UserCalendarScreen = () => {
                     <span className="badge badge-error" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>
                       Absent
                     </span>
-                  ) : null}
+                  ) : (
+                    <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>--</span>
+                  )}
                 </div>
               </div>
             );

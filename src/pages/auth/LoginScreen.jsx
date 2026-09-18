@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Server, Sparkles, MapPin, Laptop, AlertCircle, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Sparkles, MapPin, Laptop, AlertCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useServerConfig } from '../../context/ServerConfigContext';
-import { SettingsModal } from '../../components/common/SettingsModal';
 import { APP_CONSTANTS } from '../../constants/appConstants';
 
 export const LoginScreen = () => {
   const navigate = useNavigate();
   const { login, isLoading, authError } = useAuth();
-  const { currentUrl, serverStatus } = useServerConfig();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [localError, setLocalError] = useState('');
 
   useEffect(() => {
@@ -45,8 +41,6 @@ export const LoginScreen = () => {
       }
     }
   };
-
-  const shortUrl = currentUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
 
   return (
     <div
@@ -87,46 +81,6 @@ export const LoginScreen = () => {
 
         {/* Card */}
         <div className="glass-card" style={{ padding: '2rem' }}>
-          {/* Dynamic Backend Indicator Pill */}
-          <div
-            onClick={() => setIsSettingsOpen(true)}
-            style={{
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0.55rem 0.85rem',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: 'var(--bg-hover)',
-              border: '1px solid var(--border-color)',
-              marginBottom: '1.5rem',
-              fontSize: '0.8rem',
-            }}
-            title="Click to configure backend server URL"
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span
-                style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor:
-                    serverStatus === 'connected'
-                      ? 'var(--success)'
-                      : serverStatus === 'checking'
-                      ? 'var(--warning)'
-                      : 'var(--error)',
-                }}
-              />
-              <span style={{ color: 'var(--text-secondary)' }}>Server:</span>
-              <strong style={{ color: 'var(--text-primary)' }}>{shortUrl}</strong>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--primary)', fontWeight: 600 }}>
-              <Server size={13} />
-              <span>Change</span>
-            </div>
-          </div>
-
           {(localError || authError) && (
             <div
               style={{
@@ -282,11 +236,6 @@ export const LoginScreen = () => {
           </div>
         </div>
       </div>
-
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
     </div>
   );
 };

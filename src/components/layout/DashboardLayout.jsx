@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import { SettingsModal } from '../common/SettingsModal';
 
 export const DashboardLayout = () => {
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const location = useLocation();
 
   // Determine current page title based on pathname
@@ -25,21 +23,15 @@ export const DashboardLayout = () => {
 
   return (
     <div className="app-container">
-      <Sidebar onOpenSettings={() => setIsSettingsOpen(true)} />
+      <Sidebar />
       <div className="main-content">
         <Header
           title={getPageTitle(location.pathname)}
-          onOpenSettings={() => setIsSettingsOpen(true)}
         />
         <main className="page-body">
           <Outlet />
         </main>
       </div>
-
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
     </div>
   );
 };

@@ -9,12 +9,11 @@ import {
   User,
   ShieldCheck,
   LogOut,
-  Sliders,
   Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-export const Sidebar = ({ onOpenSettings }) => {
+export const Sidebar = () => {
   const { isAdmin, currentUser, logout } = useAuth();
 
   const adminLinks = [
@@ -77,7 +76,7 @@ export const Sidebar = ({ onOpenSettings }) => {
         </div>
         <div>
           <div style={{ fontWeight: 800, fontSize: '1.25rem', fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>
-            AMS <span style={{ color: 'var(--primary)', fontSize: '0.85rem' }}>PRO</span>
+            AMS
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
             {isAdmin ? 'Admin Console' : 'Employee Portal'}
@@ -134,15 +133,6 @@ export const Sidebar = ({ onOpenSettings }) => {
           gap: '0.75rem',
         }}
       >
-        <button
-          className="btn btn-outline btn-sm"
-          onClick={onOpenSettings}
-          style={{ width: '100%', justifyContent: 'flex-start', gap: '0.6rem' }}
-        >
-          <Sliders size={16} />
-          <span>Server & Settings</span>
-        </button>
-
         <button
           className="btn btn-outline btn-sm"
           onClick={logout}

@@ -1,7 +1,7 @@
 export const APP_CONSTANTS = {
   APP_NAME: 'AMS',
   APP_VERSION: '1.0.0',
-  DEFAULT_API_URL: 'https://ams-backend-w03p.onrender.com',
+  DEFAULT_API_URL: 'https://ams-backend-1-hjq6.onrender.com',
   LOCAL_API_URL: 'http://localhost:3000',
 
   STORAGE_KEYS: {

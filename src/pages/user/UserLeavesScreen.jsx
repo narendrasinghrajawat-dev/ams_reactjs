@@ -75,12 +75,20 @@ export const UserLeavesScreen = () => {
 
     setSubmitting(true);
     try {
+      const s = new Date(startDate);
+      const eDate = new Date(endDate);
+      const diffTime = eDate.getTime() - s.getTime();
+      const diffDays = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1);
+      const numLeaves = duration === APP_CONSTANTS.LEAVE_DURATION.HALF_DAY ? 0.5 : diffDays;
+
       const payload = {
         userKey: userKey,
         leaveType: leaveTypeId,
         startDate: startDate,
         endDate: endDate,
         leaveDuration: duration,
+        numberOfLeaves: numLeaves,
+        leaveDurationsType: duration === APP_CONSTANTS.LEAVE_DURATION.HALF_DAY ? 'Half Day' : 'Full Day',
         reason: reason.trim(),
       };
 
@@ -472,7 +480,13 @@ export const UserLeavesScreen = () => {
                       type="date"
                       className="form-control"
                       value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setStartDate(val);
+                        if (!endDate || endDate < val) {
+                          setEndDate(val);
+                        }
+                      }}
                       required
                     />
                   </div>
@@ -482,6 +496,7 @@ export const UserLeavesScreen = () => {
                       type="date"
                       className="form-control"
                       value={endDate}
+                      min={startDate}
                       onChange={(e) => setEndDate(e.target.value)}
                       required
                     />
