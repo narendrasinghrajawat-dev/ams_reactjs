@@ -14,7 +14,10 @@ import { apiService } from '../../services/apiService';
 import { API_ENDPOINTS } from '../../constants/endpoints';
 import { APP_CONSTANTS } from '../../constants/appConstants';
 
+import { useAuth } from '../../context/AuthContext';
+
 export const AdminLeavesScreen = () => {
+  const { currentUser } = useAuth();
   const [requests, setRequests] = useState([]);
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
@@ -46,9 +49,14 @@ export const AdminLeavesScreen = () => {
     if (!selectedLeave) return;
     setSubmitting(true);
     try {
+      const leaveDocId = selectedLeave._id || selectedLeave.id || selectedLeave.key || selectedLeave._key;
+      const adminKey = currentUser?._id || currentUser?.id || currentUser?.key || currentUser?._key || 'admin';
       const payload = {
-        leaveId: selectedLeave._id || selectedLeave.id || selectedLeave.key,
-        leaveStatus: statusAction, // '2' for approved, '3' for rejected
+        leavesId: leaveDocId,
+        leaveId: leaveDocId,
+        leavesStatus: String(statusAction), // '2' for approved, '3' for rejected
+        leaveStatus: String(statusAction),
+        approveByKey: adminKey,
         adminRemark: adminRemark.trim() || (statusAction === APP_CONSTANTS.LEAVE_STATUS.APPROVED ? 'Approved' : 'Rejected'),
       };
 
