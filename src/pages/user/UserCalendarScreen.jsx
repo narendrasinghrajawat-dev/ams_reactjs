@@ -20,7 +20,7 @@ export const UserCalendarScreen = () => {
     setLoading(true);
     try {
       const res = await apiService.get(`${API_ENDPOINTS.USER_GET_CALENDAR}${userKey}/${year}`).catch(() => null);
-      const calendarMap = res?.data || (res && typeof res === 'object' && !Array.isArray(res) ? res : {});
+      const calendarMap = res?.data?.data || res?.data || (res && typeof res === 'object' && !Array.isArray(res) ? res : {});
       setCalendarData(calendarMap);
     } catch (err) {
       console.error('Calendar error:', err);
@@ -57,6 +57,31 @@ export const UserCalendarScreen = () => {
   const today = new Date();
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
+  // Compute month summary statistics
+  const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  let presentCount = 0;
+  let leaveCount = 0;
+  let holidayCount = 0;
+  let absentCount = 0;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const dInfo = calendarData ? calendarData[dStr] : null;
+    const dDayOfWeek = new Date(year, month, d).getDay();
+    const dIsWeekend = dDayOfWeek === 0 || dDayOfWeek === 6;
+    const dIsPast = dStr < todayDateStr;
+
+    const dIsPresent = dInfo?.status === 'present' || !!dInfo?.punch?.punchIn;
+    const dIsLeave = dInfo?.status === 'leave' || !!dInfo?.leave;
+    const dIsHoliday = dInfo?.isHoliday && !dIsWeekend;
+    const dIsAbsent = !dIsPresent && !dIsLeave && !dIsHoliday && !dIsWeekend && dIsPast;
+
+    if (dIsPresent) presentCount++;
+    else if (dIsLeave) leaveCount++;
+    else if (dIsHoliday) holidayCount++;
+    else if (dIsAbsent) absentCount++;
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
       {/* Header */}
@@ -86,6 +111,41 @@ export const UserCalendarScreen = () => {
           >
             Today
           </button>
+        </div>
+      </div>
+
+      {/* Quick Summary Stats Bar */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem' }}>
+        <div className="glass-card" style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Present / Active</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)' }}>{presentCount}</div>
+          </div>
+          <CheckCircle2 size={22} color="var(--success)" />
+        </div>
+
+        <div className="glass-card" style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Leaves Taken</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--warning)' }}>{leaveCount}</div>
+          </div>
+          <CalendarIcon size={22} color="var(--warning)" />
+        </div>
+
+        <div className="glass-card" style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Holidays</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--info)' }}>{holidayCount}</div>
+          </div>
+          <Clock size={22} color="var(--info)" />
+        </div>
+
+        <div className="glass-card" style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Past Absents</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--error)' }}>{absentCount}</div>
+          </div>
+          <span style={{ fontSize: '1.2rem', color: 'var(--error)' }}>✕</span>
         </div>
       </div>
 
@@ -135,7 +195,10 @@ export const UserCalendarScreen = () => {
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
             const isToday = isCurrentMonth && today.getDate() === day;
 
+            const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const dayInfo = calendarData ? calendarData[dayStr] : null;
+
             const isPast = dayStr < todayDateStr;
             const isFuture = dayStr > todayDateStr;
 
