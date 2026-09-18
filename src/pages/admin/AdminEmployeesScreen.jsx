@@ -23,6 +23,8 @@ export const AdminEmployeesScreen = () => {
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState(null);
+  const [formError, setFormError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -31,21 +33,23 @@ export const AdminEmployeesScreen = () => {
   const [isLeavesModalOpen, setIsLeavesModalOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState(null);
 
-  // Form states
-  const [formData, setFormData] = useState({
+  // Form states - identical to Flutter UserForm
+  const initialFormData = {
     firstName: '',
+    middleName: '',
     lastName: '',
     email: '',
-    phone: '',
     phoneNo: '',
-    password: '',
-    roleId: APP_CONSTANTS.ROLES.USER,
-    designation: '',
-    department: '',
-    countryCode: '+91',
-    address: '',
     genderId: '1',
-  });
+    username: '',
+    dob: '',
+    password: '',
+    address: '',
+    roleId: APP_CONSTANTS.ROLES.USER,
+    countryCode: '+91',
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
 
   const [newPassword, setNewPassword] = useState('');
   const [leaveAlloc, setLeaveAlloc] = useState({
@@ -53,6 +57,14 @@ export const AdminEmployeesScreen = () => {
     sickLeaves: 10,
     paidLeaves: 15,
   });
+
+  // Auto-dismiss notice after 4 seconds
+  useEffect(() => {
+    if (notice) {
+      const timer = setTimeout(() => setNotice(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [notice]);
 
   const fetchEmployees = async () => {
     setLoading(true);
@@ -73,60 +85,65 @@ export const AdminEmployeesScreen = () => {
 
   const handleCreateEmployee = async (e) => {
     e.preventDefault();
+    setFormError(null);
+    setIsSubmitting(true);
     try {
+      const cleanEmail = formData.email.trim().toLowerCase();
       const payload = {
         firstName: formData.firstName.trim(),
+        middleName: formData.middleName?.trim() || '',
         lastName: formData.lastName.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone || formData.phoneNo || '',
-        phoneNo: formData.phone || formData.phoneNo || '',
-        password: formData.password,
-        roleId: String(formData.roleId || APP_CONSTANTS.ROLES.USER),
-        designation: formData.designation?.trim() || '',
-        department: formData.department?.trim() || '',
-        countryCode: formData.countryCode || '+91',
+        email: cleanEmail,
+        phoneNo: formData.phoneNo?.trim() || '',
+        phone: formData.phoneNo?.trim() || '',
         genderId: formData.genderId || '1',
-        address: formData.address || '',
+        username: formData.username?.trim() || cleanEmail.split('@')[0],
+        dob: formData.dob || '',
+        password: formData.password,
+        address: formData.address?.trim() || '',
+        roleId: String(formData.roleId || APP_CONSTANTS.ROLES.USER),
+        countryCode: formData.countryCode || '+91',
       };
       await apiService.post(API_ENDPOINTS.ADMIN_CREATE_USER, payload);
       setNotice({ type: 'success', message: 'Employee registered successfully!' });
       setIsAddModalOpen(false);
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        phoneNo: '',
-        password: '',
-        roleId: APP_CONSTANTS.ROLES.USER,
-        designation: '',
-        department: '',
-        countryCode: '+91',
-        address: '',
-        genderId: '1',
-      });
+      setFormData(initialFormData);
       await fetchEmployees();
     } catch (err) {
       console.error('Create user failed:', err);
-      setNotice({ type: 'error', message: err.message || 'Failed to create employee.' });
+      const msg = err.response?.data?.message || err.message || 'Failed to create employee.';
+      setFormError(msg);
+      setNotice({ type: 'error', message: msg });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdateEmployee = async (e) => {
     e.preventDefault();
     if (!selectedEmp) return;
+    setFormError(null);
+    setIsSubmitting(true);
     try {
       const key = selectedEmp.key || selectedEmp._key || selectedEmp._id || selectedEmp.id;
+      const cleanEmail = formData.email.trim().toLowerCase();
       const payload = {
         firstName: formData.firstName.trim(),
+        middleName: formData.middleName?.trim() || '',
         lastName: formData.lastName.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone || formData.phoneNo || '',
-        phoneNo: formData.phone || formData.phoneNo || '',
+        email: cleanEmail,
+        phoneNo: formData.phoneNo?.trim() || '',
+        phone: formData.phoneNo?.trim() || '',
+        genderId: formData.genderId || '1',
+        username: formData.username?.trim() || cleanEmail.split('@')[0],
+        dob: formData.dob || '',
+        address: formData.address?.trim() || '',
         roleId: String(formData.roleId || APP_CONSTANTS.ROLES.USER),
-        designation: formData.designation?.trim() || '',
-        department: formData.department?.trim() || '',
+        countryCode: formData.countryCode || '+91',
       };
+      if (formData.password?.trim()) {
+        payload.password = formData.password.trim();
+      }
       await apiService.patch(`${API_ENDPOINTS.ADMIN_UPDATE_USER}${key}`, payload);
       setNotice({ type: 'success', message: 'Employee updated successfully!' });
       setIsEditModalOpen(false);
@@ -134,7 +151,11 @@ export const AdminEmployeesScreen = () => {
       await fetchEmployees();
     } catch (err) {
       console.error('Update user failed:', err);
-      setNotice({ type: 'error', message: err.message || 'Failed to update employee.' });
+      const msg = err.response?.data?.message || err.message || 'Failed to update employee.';
+      setFormError(msg);
+      setNotice({ type: 'error', message: msg });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -196,23 +217,37 @@ export const AdminEmployeesScreen = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-      {/* Notice Banner */}
+      {/* Top Floating Notification (Always Visible Over Modals) */}
       {notice && (
         <div
           style={{
-            padding: '1rem 1.25rem',
-            borderRadius: 'var(--radius-md)',
-            backgroundColor: notice.type === 'success' ? 'var(--success-bg)' : 'var(--error-bg)',
-            color: notice.type === 'success' ? 'var(--success-text)' : 'var(--error-text)',
+            position: 'fixed',
+            top: '1.25rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 999999,
+            minWidth: '320px',
+            maxWidth: '92%',
+            padding: '0.85rem 1.25rem',
+            borderRadius: '8px',
+            backgroundColor: notice.type === 'success' ? '#059669' : '#dc2626',
+            color: '#ffffff',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            gap: '1rem',
+            fontSize: '0.92rem',
+            fontWeight: 600,
           }}
         >
-          <span>{notice.message}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            {notice.type === 'success' ? <Check size={20} /> : <AlertCircle size={20} />}
+            <span>{notice.message}</span>
+          </div>
           <button
             onClick={() => setNotice(null)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, color: 'inherit' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, color: '#ffffff', fontSize: '1.1rem' }}
           >
             ✕
           </button>
@@ -228,7 +263,14 @@ export const AdminEmployeesScreen = () => {
           </p>
         </div>
 
-        <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setFormError(null);
+            setFormData(initialFormData);
+            setIsAddModalOpen(true);
+          }}
+        >
           <UserPlus size={18} />
           <span>Add New Employee</span>
         </button>
@@ -252,7 +294,7 @@ export const AdminEmployeesScreen = () => {
               type="text"
               className="form-control"
               style={{ paddingLeft: '2.6rem' }}
-              placeholder="Search by name, email, department..."
+              placeholder="Search by name, email, username..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -281,8 +323,8 @@ export const AdminEmployeesScreen = () => {
               <tr>
                 <th>Employee</th>
                 <th>Role</th>
-                <th>Designation</th>
                 <th>Phone</th>
+                <th>Gender</th>
                 <th>Joined</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
@@ -325,10 +367,10 @@ export const AdminEmployeesScreen = () => {
                           </div>
                           <div>
                             <div style={{ fontWeight: 600 }}>
-                              {emp.firstName} {emp.lastName}
+                              {emp.firstName} {emp.middleName ? `${emp.middleName} ` : ''}{emp.lastName}
                             </div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                              {emp.email}
+                              {emp.email} {emp.username ? `(@${emp.username})` : ''}
                             </div>
                           </div>
                         </div>
@@ -338,8 +380,10 @@ export const AdminEmployeesScreen = () => {
                           {isAdmin ? 'Admin' : 'Employee'}
                         </span>
                       </td>
-                      <td>{emp.designation || 'Specialist'}</td>
-                      <td>{emp.phone || emp.phoneNo || '--'}</td>
+                      <td>{emp.phoneNo || emp.phone || '--'}</td>
+                      <td>
+                        {emp.genderId === '2' ? 'Female' : emp.genderId === '3' ? 'Other' : 'Male'}
+                      </td>
                       <td>
                         {emp.joinedDate
                           ? new Date(emp.joinedDate).toLocaleDateString()
@@ -380,19 +424,20 @@ export const AdminEmployeesScreen = () => {
                             className="btn-icon"
                             onClick={() => {
                               setSelectedEmp(emp);
+                              setFormError(null);
                               setFormData({
                                 firstName: emp.firstName || '',
+                                middleName: emp.middleName || '',
                                 lastName: emp.lastName || '',
                                 email: emp.email || '',
-                                phone: emp.phone || emp.phoneNo || '',
                                 phoneNo: emp.phoneNo || emp.phone || '',
                                 password: '',
                                 roleId: emp.roleId ? String(emp.roleId) : APP_CONSTANTS.ROLES.USER,
-                                designation: emp.designation || '',
-                                department: emp.department || '',
                                 countryCode: emp.countryCode || '+91',
                                 address: typeof emp.address === 'string' ? emp.address : '',
-                                genderId: emp.genderId || '1',
+                                genderId: emp.genderId ? String(emp.genderId) : '1',
+                                username: emp.username || '',
+                                dob: emp.dob ? String(emp.dob).substring(0, 10) : '',
                               });
                               setIsEditModalOpen(true);
                             }}
@@ -420,7 +465,7 @@ export const AdminEmployeesScreen = () => {
         </div>
       </div>
 
-      {/* Add Employee Modal */}
+      {/* Add Employee Modal (Exact Match to Flutter Form) */}
       {isAddModalOpen && (
         <div className="modal-overlay" onClick={() => setIsAddModalOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -436,22 +481,56 @@ export const AdminEmployeesScreen = () => {
 
             <form onSubmit={handleCreateEmployee}>
               <div className="modal-body">
+                {formError && (
+                  <div
+                    style={{
+                      padding: '0.75rem 1rem',
+                      marginBottom: '1rem',
+                      borderRadius: 'var(--radius-sm, 6px)',
+                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid var(--error, #ef4444)',
+                      color: '#f87171',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                    }}
+                  >
+                    <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                    <span>{formError}</span>
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label className="form-label">First Name *</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter first name"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    required
+                  />
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div className="form-group">
-                    <label className="form-label">First Name</label>
+                    <label className="form-label">Middle Name</label>
                     <input
                       type="text"
                       className="form-control"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      required
+                      placeholder="Optional"
+                      value={formData.middleName}
+                      onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Last Name</label>
+                    <label className="form-label">Last Name *</label>
                     <input
                       type="text"
                       className="form-control"
+                      placeholder="Enter last name"
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                       required
@@ -460,64 +539,65 @@ export const AdminEmployeesScreen = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Email Address</label>
+                  <label className="form-label">Email *</label>
                   <input
                     type="email"
                     className="form-control"
+                    placeholder="user@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div className="form-group">
-                    <label className="form-label">Phone Number</label>
-                    <input
-                      type="tel"
-                      className="form-control"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Role</label>
-                    <select
-                      className="form-control form-select"
-                      value={formData.roleId}
-                      onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
-                    >
-                      <option value={APP_CONSTANTS.ROLES.USER}>Employee</option>
-                      <option value={APP_CONSTANTS.ROLES.ADMIN}>Administrator</option>
-                    </select>
-                  </div>
+                <div className="form-group">
+                  <label className="form-label">Phone No</label>
+                  <input
+                    type="tel"
+                    className="form-control"
+                    placeholder="10-digit phone number"
+                    value={formData.phoneNo}
+                    onChange={(e) => setFormData({ ...formData, phoneNo: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Gender</label>
+                  <select
+                    className="form-control form-select"
+                    value={formData.genderId}
+                    onChange={(e) => setFormData({ ...formData, genderId: e.target.value })}
+                  >
+                    <option value="1">Male</option>
+                    <option value="2">Female</option>
+                    <option value="3">Other</option>
+                  </select>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div className="form-group">
-                    <label className="form-label">Designation</label>
+                    <label className="form-label">Username</label>
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="e.g. Frontend Engineer"
-                      value={formData.designation}
-                      onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                      placeholder="Username (optional)"
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Department</label>
+                    <label className="form-label">Date of Birth</label>
                     <input
-                      type="text"
+                      type="date"
                       className="form-control"
-                      placeholder="e.g. Engineering"
-                      value={formData.department}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                      value={formData.dob}
+                      onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
                     />
                   </div>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Initial Password</label>
+                  <label className="form-label">Password *</label>
                   <input
                     type="password"
                     className="form-control"
@@ -527,14 +607,37 @@ export const AdminEmployeesScreen = () => {
                     required
                   />
                 </div>
+
+                <div className="form-group">
+                  <label className="form-label">Address</label>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    placeholder="Enter residential address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Role</label>
+                  <select
+                    className="form-control form-select"
+                    value={formData.roleId}
+                    onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
+                  >
+                    <option value={APP_CONSTANTS.ROLES.USER}>Employee</option>
+                    <option value={APP_CONSTANTS.ROLES.ADMIN}>Admin</option>
+                  </select>
+                </div>
               </div>
 
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline" onClick={() => setIsAddModalOpen(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Create Employee
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating...' : 'Create Employee'}
                 </button>
               </div>
             </form>
@@ -542,7 +645,7 @@ export const AdminEmployeesScreen = () => {
         </div>
       )}
 
-      {/* Edit Employee Modal */}
+      {/* Edit Employee Modal (Exact Match to Flutter Form) */}
       {isEditModalOpen && (
         <div className="modal-overlay" onClick={() => setIsEditModalOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -558,19 +661,50 @@ export const AdminEmployeesScreen = () => {
 
             <form onSubmit={handleUpdateEmployee}>
               <div className="modal-body">
+                {formError && (
+                  <div
+                    style={{
+                      padding: '0.75rem 1rem',
+                      marginBottom: '1rem',
+                      borderRadius: 'var(--radius-sm, 6px)',
+                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid var(--error, #ef4444)',
+                      color: '#f87171',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                    }}
+                  >
+                    <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                    <span>{formError}</span>
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label className="form-label">First Name *</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    required
+                  />
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div className="form-group">
-                    <label className="form-label">First Name</label>
+                    <label className="form-label">Middle Name</label>
                     <input
                       type="text"
                       className="form-control"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      required
+                      value={formData.middleName}
+                      onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Last Name</label>
+                    <label className="form-label">Last Name *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -582,7 +716,7 @@ export const AdminEmployeesScreen = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Email Address</label>
+                  <label className="form-label">Email *</label>
                   <input
                     type="email"
                     className="form-control"
@@ -592,48 +726,81 @@ export const AdminEmployeesScreen = () => {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div className="form-group">
-                    <label className="form-label">Phone</label>
-                    <input
-                      type="tel"
-                      className="form-control"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Role</label>
-                    <select
-                      className="form-control form-select"
-                      value={formData.roleId}
-                      onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
-                    >
-                      <option value={APP_CONSTANTS.ROLES.USER}>Employee</option>
-                      <option value={APP_CONSTANTS.ROLES.ADMIN}>Administrator</option>
-                    </select>
-                  </div>
+                <div className="form-group">
+                  <label className="form-label">Phone No</label>
+                  <input
+                    type="tel"
+                    className="form-control"
+                    value={formData.phoneNo}
+                    onChange={(e) => setFormData({ ...formData, phoneNo: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Gender</label>
+                  <select
+                    className="form-control form-select"
+                    value={formData.genderId}
+                    onChange={(e) => setFormData({ ...formData, genderId: e.target.value })}
+                  >
+                    <option value="1">Male</option>
+                    <option value="2">Female</option>
+                    <option value="3">Other</option>
+                  </select>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div className="form-group">
-                    <label className="form-label">Designation</label>
+                    <label className="form-label">Username</label>
                     <input
                       type="text"
                       className="form-control"
-                      value={formData.designation}
-                      onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Department</label>
+                    <label className="form-label">Date of Birth</label>
                     <input
-                      type="text"
+                      type="date"
                       className="form-control"
-                      value={formData.department}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                      value={formData.dob}
+                      onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
                     />
                   </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Password (Optional)</label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    placeholder="Leave blank to keep unchanged"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Address</label>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Role</label>
+                  <select
+                    className="form-control form-select"
+                    value={formData.roleId}
+                    onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
+                  >
+                    <option value={APP_CONSTANTS.ROLES.USER}>Employee</option>
+                    <option value={APP_CONSTANTS.ROLES.ADMIN}>Admin</option>
+                  </select>
                 </div>
               </div>
 
@@ -641,8 +808,8 @@ export const AdminEmployeesScreen = () => {
                 <button type="button" className="btn btn-outline" onClick={() => setIsEditModalOpen(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Save Changes
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>
