@@ -160,37 +160,118 @@ export const UserLeavesScreen = () => {
         </button>
       </div>
 
-      {/* Leave Balance Cards Grid */}
+      {/* Leave Balance Cards Grid matching mobile app */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: '1.25rem',
         }}
       >
         {balances.length > 0 ? (
-          balances.map((b, idx) => (
-            <div key={idx} className="stat-card">
-              <div className="stat-icon-wrapper" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
-                <CalendarDays size={24} />
+          balances.map((b, idx) => {
+            const leaveTitle = b.name || (b.id === '1' ? 'Casual/Sick Leave' : b.id === '2' ? 'Annual Leave' : b.leaveName || `Leave Type ${b.id || idx + 1}`);
+            const total = Number(b.total ?? b.balance ?? 0);
+            const available = Number(b.balance ?? 0);
+            const used = Math.max(0, total - available);
+            const progressPct = total > 0 ? Math.min(100, (available / total) * 100) : 0;
+
+            return (
+              <div key={idx} className="glass-card" style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <h4 style={{ fontSize: '1.05rem', fontWeight: 700 }}>{leaveTitle}</h4>
+                  <CalendarDays size={20} color="var(--primary)" />
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ width: '100%', height: '7px', backgroundColor: 'var(--bg-page)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      width: `${progressPct}%`,
+                      height: '100%',
+                      backgroundColor: 'var(--primary)',
+                      borderRadius: '4px',
+                      transition: 'width 0.3s ease',
+                    }}
+                  />
+                </div>
+
+                {/* 3 Metric columns */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', textAlign: 'center', paddingTop: '0.25rem' }}>
+                  <div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#8b5cf6' }}>{total}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Total</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)' }}>{available}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Available</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--error)' }}>{used}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Used</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="stat-val">{b.balance || 0}</div>
-                <div className="stat-label">{b.leaveName || `Type ${b.leaveType || idx + 1}`}</div>
-              </div>
-            </div>
-          ))
+            );
+          })
         ) : (
-          <div className="stat-card">
-            <div className="stat-icon-wrapper" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
-              <CalendarDays size={24} />
+          <>
+            <div className="glass-card" style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Casual/Sick Leave</h4>
+                <CalendarDays size={20} color="var(--primary)" />
+              </div>
+              <div style={{ width: '100%', height: '7px', backgroundColor: 'var(--bg-page)', borderRadius: '4px' }}>
+                <div style={{ width: '100%', height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px' }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', textAlign: 'center' }}>
+                <div><div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#8b5cf6' }}>2</div><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Total</div></div>
+                <div><div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)' }}>2</div><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Available</div></div>
+                <div><div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--error)' }}>0</div><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Used</div></div>
+              </div>
             </div>
-            <div>
-              <div className="stat-val">Standard</div>
-              <div className="stat-label">Casual & Medical Leave</div>
+            <div className="glass-card" style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Annual Leave</h4>
+                <CalendarDays size={20} color="var(--primary)" />
+              </div>
+              <div style={{ width: '100%', height: '7px', backgroundColor: 'var(--bg-page)', borderRadius: '4px' }}>
+                <div style={{ width: '100%', height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px' }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', textAlign: 'center' }}>
+                <div><div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#8b5cf6' }}>3</div><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Total</div></div>
+                <div><div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)' }}>3</div><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Available</div></div>
+                <div><div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--error)' }}>0</div><div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Used</div></div>
+              </div>
             </div>
-          </div>
+          </>
         )}
+      </div>
+
+      {/* Summary Stat Rows */}
+      <div className="glass-card" style={{ padding: '1.25rem 1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', textAlign: 'center' }}>
+          <div style={{ borderRight: '1px solid var(--border-color)', paddingRight: '0.5rem' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Total Applied</div>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, marginTop: '0.2rem' }}>{leaves.length}</div>
+          </div>
+          <div style={{ borderRight: '1px solid var(--border-color)', paddingRight: '0.5rem' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Approved</div>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--success)', marginTop: '0.2rem' }}>{countApproved}</div>
+          </div>
+          <div style={{ borderRight: '1px solid var(--border-color)', paddingRight: '0.5rem' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Pending</div>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--warning)', marginTop: '0.2rem' }}>{countPending}</div>
+          </div>
+          <div style={{ borderRight: '1px solid var(--border-color)', paddingRight: '0.5rem' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Rejected</div>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--error)', marginTop: '0.2rem' }}>{countRejected}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Cancelled</div>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-muted)', marginTop: '0.2rem' }}>{countCancelled}</div>
+          </div>
+        </div>
       </div>
 
       {/* Filter Tabs and Applications Table */}
@@ -222,8 +303,8 @@ export const UserLeavesScreen = () => {
                 borderRadius: 'var(--radius-full)',
                 border: '1px solid',
                 borderColor: activeFilter === tab.key ? 'var(--primary)' : 'var(--border-color)',
-                backgroundColor: activeFilter === tab.key ? 'var(--primary-light)' : 'transparent',
-                color: activeFilter === tab.key ? 'var(--primary)' : 'var(--text-secondary)',
+                backgroundColor: activeFilter === tab.key ? 'var(--primary)' : 'transparent',
+                color: activeFilter === tab.key ? '#fff' : 'var(--text-secondary)',
                 fontWeight: 600,
                 fontSize: '0.85rem',
                 cursor: 'pointer',
@@ -239,7 +320,7 @@ export const UserLeavesScreen = () => {
                   fontSize: '0.75rem',
                   padding: '0.1rem 0.45rem',
                   borderRadius: 'var(--radius-full)',
-                  backgroundColor: 'var(--bg-surface)',
+                  backgroundColor: activeFilter === tab.key ? 'rgba(255,255,255,0.25)' : 'var(--bg-surface)',
                   color: 'inherit',
                 }}
               >
@@ -276,9 +357,11 @@ export const UserLeavesScreen = () => {
                   const startStr = l.startDate ? new Date(l.startDate).toLocaleDateString() : '';
                   const endStr = l.endDate ? new Date(l.endDate).toLocaleDateString() : '';
 
+                  const leaveTitle = l.leaveName || (String(l.leaveType) === '1' ? 'Casual/Sick Leave' : String(l.leaveType) === '2' ? 'Annual Leave' : String(l.leaveType) === '3' ? 'Earned/Paid Leave' : l.leaveType || 'General Leave');
+
                   return (
                     <tr key={l._id || l.id || index}>
-                      <td style={{ fontWeight: 600 }}>{l.leaveName || l.leaveType || 'General Leave'}</td>
+                      <td style={{ fontWeight: 600 }}>{leaveTitle}</td>
                       <td>
                         <span className="badge badge-info">
                           {String(l.leaveDuration) === APP_CONSTANTS.LEAVE_DURATION.HALF_DAY ? 'Half Day' : 'Full Day'}

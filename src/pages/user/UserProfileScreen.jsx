@@ -139,8 +139,8 @@ export const UserProfileScreen = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <Briefcase size={18} color="var(--info)" />
             <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Employee ID / Key</div>
-              <div style={{ fontWeight: 600 }}>{userKey || 'EMP001'}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Employee ID</div>
+              <div style={{ fontWeight: 600 }}>{currentUser?.employeeId || 'EMP001'}</div>
             </div>
           </div>
         </div>

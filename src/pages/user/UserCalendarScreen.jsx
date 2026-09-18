@@ -9,7 +9,7 @@ export const UserCalendarScreen = () => {
   const userKey = currentUser?.key || currentUser?.id || '';
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [calendarData, setCalendarData] = useState([]);
+  const [calendarData, setCalendarData] = useState({});
   const [loading, setLoading] = useState(false);
 
   const year = currentDate.getFullYear();
@@ -19,8 +19,9 @@ export const UserCalendarScreen = () => {
     if (!userKey) return;
     setLoading(true);
     try {
-      const res = await apiService.get(`${API_ENDPOINTS.USER_GET_CALENDAR}${userKey}/${year}`).catch(() => []);
-      setCalendarData(Array.isArray(res) ? res : []);
+      const res = await apiService.get(`${API_ENDPOINTS.USER_GET_CALENDAR}${userKey}/${year}`).catch(() => null);
+      const calendarMap = res?.data || (res && typeof res === 'object' && !Array.isArray(res) ? res : {});
+      setCalendarData(calendarMap);
     } catch (err) {
       console.error('Calendar error:', err);
     } finally {
@@ -134,11 +135,14 @@ export const UserCalendarScreen = () => {
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
             const isToday = isCurrentMonth && today.getDate() === day;
 
-            // Check if user has attendance recorded on this day in calendarData
             const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const record = calendarData.find((r) => r.date?.startsWith(dayStr));
+            const dayInfo = calendarData[dayStr];
 
-            const isPresent = record?.status === 'present' || (!isWeekend && day < (isCurrentMonth ? today.getDate() : 32));
+            const isPresent = dayInfo?.status === 'present' || !!dayInfo?.punch?.punchIn;
+            const isLeave = dayInfo?.status === 'leave';
+            const isHoliday = dayInfo?.isHoliday && !isWeekend;
+            const isBeforeJoining = dayInfo?.isBeforeJoining || dayInfo?.status === 'not_joined';
+            const isAbsent = dayInfo?.status === 'absent';
 
             return (
               <div
@@ -174,15 +178,36 @@ export const UserCalendarScreen = () => {
 
                 {/* Day status badge */}
                 <div>
-                  {isWeekend ? (
+                  {isBeforeJoining ? (
+                    <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>--</span>
+                  ) : isPresent ? (
+                    <div>
+                      <span className="badge badge-success" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>
+                        {isToday ? 'Active' : 'Present'}
+                      </span>
+                      {dayInfo?.punch?.duration && (
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                          {dayInfo.punch.duration}
+                        </div>
+                      )}
+                    </div>
+                  ) : isLeave ? (
+                    <span className="badge badge-warning" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }} title={dayInfo?.leave?.leaveName}>
+                      On Leave
+                    </span>
+                  ) : isHoliday ? (
+                    <span className="badge badge-info" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }} title={dayInfo?.holidayName}>
+                      {dayInfo?.holidayName || 'Holiday'}
+                    </span>
+                  ) : isWeekend ? (
                     <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>Weekend</span>
                   ) : isToday ? (
-                    <span className="badge badge-success" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>
-                      Active
+                    <span className="badge badge-info" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>
+                      Today
                     </span>
-                  ) : day < (isCurrentMonth ? today.getDate() : 32) ? (
-                    <span className="badge badge-success" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>
-                      Present
+                  ) : isAbsent ? (
+                    <span className="badge badge-error" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>
+                      Absent
                     </span>
                   ) : null}
                 </div>

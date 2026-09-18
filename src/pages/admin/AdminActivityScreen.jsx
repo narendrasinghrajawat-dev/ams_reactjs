@@ -70,7 +70,7 @@ export const AdminActivityScreen = () => {
           <table className="modern-table">
             <thead>
               <tr>
-                <th>Employee Key</th>
+                <th>Employee Name</th>
                 <th>Punch Type</th>
                 <th>Recorded Time</th>
                 <th>Work Mode</th>
@@ -102,7 +102,7 @@ export const AdminActivityScreen = () => {
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <User size={16} color="var(--primary)" />
-                          <span style={{ fontWeight: 600 }}>{item.userKey || item.userId || 'Emp'}</span>
+                          <span style={{ fontWeight: 600 }}>{item.userName || item.employeeName || item.userKey || 'Employee'}</span>
                         </div>
                       </td>
                       <td>

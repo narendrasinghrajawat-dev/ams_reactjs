@@ -218,10 +218,10 @@ export const AdminLeavesScreen = () => {
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <User size={16} color="var(--primary)" />
-                          <span style={{ fontWeight: 600 }}>{req.userKey || req.userName || 'Employee'}</span>
+                          <span style={{ fontWeight: 600 }}>{req.userName || req.employeeName || req.userKey || 'Employee'}</span>
                         </div>
                       </td>
-                      <td>{req.leaveName || req.leaveType || 'General'}</td>
+                      <td>{req.leaveName || (req.leaveType === '1' ? 'Casual/Sick Leave' : req.leaveType === '2' ? 'Annual Leave' : req.leaveType || 'General Leave')}</td>
                       <td>
                         <span className="badge badge-info">
                           {String(req.leaveDuration) === APP_CONSTANTS.LEAVE_DURATION.HALF_DAY ? 'Half Day' : 'Full Day'}
@@ -291,8 +291,12 @@ export const AdminLeavesScreen = () => {
                 }}
               >
                 <div>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Applicant Key:</span>{' '}
-                  <strong>{selectedLeave.userKey || 'Emp'}</strong>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Applicant Name:</span>{' '}
+                  <strong>{selectedLeave.userName || selectedLeave.employeeName || selectedLeave.userKey || 'Employee'}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Leave Type:</span>{' '}
+                  <strong>{selectedLeave.leaveName || (selectedLeave.leaveType === '1' ? 'Casual/Sick Leave' : selectedLeave.leaveType === '2' ? 'Annual Leave' : selectedLeave.leaveType || 'General Leave')}</strong>
                 </div>
                 <div>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Duration:</span>{' '}

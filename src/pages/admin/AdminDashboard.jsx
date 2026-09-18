@@ -81,18 +81,27 @@ export const AdminDashboard = () => {
     (l) => String(l.leaveStatus) === APP_CONSTANTS.LEAVE_STATUS.PENDING
   ).length;
 
+  const getUserName = (key, fallbackName) => {
+    if (fallbackName && fallbackName !== 'Unknown User') return fallbackName;
+    const user = users.find((u) => (u._key || u.key || u._id || u.id) === key);
+    if (user) {
+      return [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username || user.email;
+    }
+    return 'Employee';
+  };
+
   // Combine attendance & leave records for recent activity stream
   const recentActivities = [
     ...attendance.map((a) => ({
       type: 'punch',
-      title: `${a.punchType === APP_CONSTANTS.PUNCH_TYPE.CHECK_IN ? 'Punched In' : 'Punched Out'} (${a.userKey || 'Emp'})`,
+      title: `${a.punchType === APP_CONSTANTS.PUNCH_TYPE.CHECK_IN ? 'Punched In' : 'Punched Out'} (${getUserName(a.userKey || a.userId, a.userName || a.employeeName)})`,
       timestamp: a.punchTime || a.createdDate,
       isCheckIn: a.punchType === APP_CONSTANTS.PUNCH_TYPE.CHECK_IN,
       isWFH: a.isWFH,
     })),
     ...leaves.map((l) => ({
       type: 'leave',
-      title: `Leave Applied (${l.userKey || 'Emp'})`,
+      title: `Leave Applied (${getUserName(l.userKey || l.userId, l.userName || l.employeeName)})`,
       timestamp: l.createdDate || l.startDate,
       status: l.leaveStatus,
       duration: l.leaveDuration,
@@ -290,7 +299,7 @@ export const AdminDashboard = () => {
               <table className="modern-table">
                 <thead>
                   <tr>
-                    <th>User Key</th>
+                    <th>Employee Name</th>
                     <th>Type</th>
                     <th>Time</th>
                     <th>Mode</th>
@@ -299,7 +308,7 @@ export const AdminDashboard = () => {
                 <tbody>
                   {attendance.slice(0, 10).map((att, idx) => (
                     <tr key={idx}>
-                      <td style={{ fontWeight: 600 }}>{att.userKey || att.userId || 'User'}</td>
+                      <td style={{ fontWeight: 600 }}>{getUserName(att.userKey || att.userId, att.userName || att.employeeName)}</td>
                       <td>
                         <span className={`badge ${att.punchType === APP_CONSTANTS.PUNCH_TYPE.CHECK_IN ? 'badge-success' : 'badge-error'}`}>
                           {att.punchType === APP_CONSTANTS.PUNCH_TYPE.CHECK_IN ? 'In' : 'Out'}
