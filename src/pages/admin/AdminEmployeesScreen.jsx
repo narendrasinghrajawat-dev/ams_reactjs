@@ -37,10 +37,14 @@ export const AdminEmployeesScreen = () => {
     lastName: '',
     email: '',
     phone: '',
+    phoneNo: '',
     password: '',
     roleId: APP_CONSTANTS.ROLES.USER,
     designation: '',
     department: '',
+    countryCode: '+91',
+    address: '',
+    genderId: '1',
   });
 
   const [newPassword, setNewPassword] = useState('');
@@ -70,7 +74,21 @@ export const AdminEmployeesScreen = () => {
   const handleCreateEmployee = async (e) => {
     e.preventDefault();
     try {
-      await apiService.post(API_ENDPOINTS.ADMIN_CREATE_USER, formData);
+      const payload = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone || formData.phoneNo || '',
+        phoneNo: formData.phone || formData.phoneNo || '',
+        password: formData.password,
+        roleId: String(formData.roleId || APP_CONSTANTS.ROLES.USER),
+        designation: formData.designation?.trim() || '',
+        department: formData.department?.trim() || '',
+        countryCode: formData.countryCode || '+91',
+        genderId: formData.genderId || '1',
+        address: formData.address || '',
+      };
+      await apiService.post(API_ENDPOINTS.ADMIN_CREATE_USER, payload);
       setNotice({ type: 'success', message: 'Employee registered successfully!' });
       setIsAddModalOpen(false);
       setFormData({
@@ -78,10 +96,14 @@ export const AdminEmployeesScreen = () => {
         lastName: '',
         email: '',
         phone: '',
+        phoneNo: '',
         password: '',
         roleId: APP_CONSTANTS.ROLES.USER,
         designation: '',
         department: '',
+        countryCode: '+91',
+        address: '',
+        genderId: '1',
       });
       await fetchEmployees();
     } catch (err) {
@@ -94,8 +116,18 @@ export const AdminEmployeesScreen = () => {
     e.preventDefault();
     if (!selectedEmp) return;
     try {
-      const key = selectedEmp.key || selectedEmp._id || selectedEmp.id;
-      await apiService.patch(`${API_ENDPOINTS.ADMIN_UPDATE_USER}${key}`, formData);
+      const key = selectedEmp.key || selectedEmp._key || selectedEmp._id || selectedEmp.id;
+      const payload = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone || formData.phoneNo || '',
+        phoneNo: formData.phone || formData.phoneNo || '',
+        roleId: String(formData.roleId || APP_CONSTANTS.ROLES.USER),
+        designation: formData.designation?.trim() || '',
+        department: formData.department?.trim() || '',
+      };
+      await apiService.patch(`${API_ENDPOINTS.ADMIN_UPDATE_USER}${key}`, payload);
       setNotice({ type: 'success', message: 'Employee updated successfully!' });
       setIsEditModalOpen(false);
       setSelectedEmp(null);
@@ -307,10 +339,14 @@ export const AdminEmployeesScreen = () => {
                         </span>
                       </td>
                       <td>{emp.designation || 'Specialist'}</td>
-                      <td>{emp.phone || '--'}</td>
+                      <td>{emp.phone || emp.phoneNo || '--'}</td>
                       <td>
-                        {emp.createdDate
+                        {emp.joinedDate
+                          ? new Date(emp.joinedDate).toLocaleDateString()
+                          : emp.createdDate
                           ? new Date(emp.createdDate).toLocaleDateString()
+                          : emp.createdAt
+                          ? new Date(emp.createdAt).toLocaleDateString()
                           : 'Recent'}
                       </td>
                       <td style={{ textAlign: 'right' }}>
@@ -348,11 +384,15 @@ export const AdminEmployeesScreen = () => {
                                 firstName: emp.firstName || '',
                                 lastName: emp.lastName || '',
                                 email: emp.email || '',
-                                phone: emp.phone || '',
+                                phone: emp.phone || emp.phoneNo || '',
+                                phoneNo: emp.phoneNo || emp.phone || '',
                                 password: '',
-                                roleId: emp.roleId || APP_CONSTANTS.ROLES.USER,
+                                roleId: emp.roleId ? String(emp.roleId) : APP_CONSTANTS.ROLES.USER,
                                 designation: emp.designation || '',
                                 department: emp.department || '',
+                                countryCode: emp.countryCode || '+91',
+                                address: typeof emp.address === 'string' ? emp.address : '',
+                                genderId: emp.genderId || '1',
                               });
                               setIsEditModalOpen(true);
                             }}
